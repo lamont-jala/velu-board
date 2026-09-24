@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<style>html,body{margin:0;padding:0}</style>
+<title>VELU SwiftUI Migration</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #FAF8F6;
+    --surface: #FFFFFF;
+    --ink: #1C1917;
+    --muted: #6B6560;
+    --faint: #948D86;
+    --line: #E7E0DA;
+    --accent: #E8502F;
+    --accent-ink: #C23E20;
+    --accent-soft: #FBEAE4;
+    --bar: #E8502F;
+    --bar-track: #F1EBE5;
+    --chip-bg: #F1EBE5;
+    --warn-bg: #FBF3E4;
+    --warn-edge: #C98A1B;
+    --sans: "Lato", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171412; --surface: #211D1A; --ink: #F2EDE8; --muted: #A8A099;
+      --faint: #7C756E; --line: #362F2A; --accent: #EC6244; --accent-ink: #F0876F;
+      --accent-soft: #33231E; --bar: #EC6244; --bar-track: #2C2723;
+      --chip-bg: #2C2723; --warn-bg: #2B2417; --warn-edge: #D9A244;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171412; --surface: #211D1A; --ink: #F2EDE8; --muted: #A8A099;
+    --faint: #7C756E; --line: #362F2A; --accent: #EC6244; --accent-ink: #F0876F;
+    --accent-soft: #33231E; --bar: #EC6244; --bar-track: #2C2723;
+    --chip-bg: #2C2723; --warn-bg: #2B2417; --warn-edge: #D9A244;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    padding-inline: 20px; padding-block: 0;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 56px; }
+  a { color: var(--accent-ink); }
+
+  header.hero { margin-bottom: 36px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent-ink); margin: 0 0 10px;
+  }
+  h1 {
+    font-weight: 900; font-size: clamp(30px, 5vw, 44px); line-height: 1.08;
+    margin: 0 0 12px; text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 62ch; margin: 0; }
+
+  h2 {
+    font-weight: 900; font-size: 21px; margin: 48px 0 6px; text-wrap: balance;
+  }
+  .sub { color: var(--muted); margin: 0 0 18px; max-width: 68ch; }
+
+  /* Stat strip */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 28px; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat b {
+    display: block; font-size: 27px; font-weight: 900;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em;
+  }
+  .stat span { font-size: 13px; color: var(--muted); }
+  @media (max-width: 640px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  .who-line { display: flex; align-items: baseline; gap: 8px; margin: 16px 0 0; max-width: 340px; }
+
+  .live-note {
+    margin: 14px 0 0; font-size: 13.5px; color: var(--muted);
+    background: var(--warn-bg); border-left: 3px solid var(--warn-edge);
+    padding: 9px 14px; border-radius: 0 8px 8px 0;
+  }
+
+  /* Phase stepper */
+  .phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .phase {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; position: relative;
+  }
+  .phase.now { border-color: var(--accent); }
+  .phase .tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .phase.now .tag { color: var(--accent-ink); }
+  .phase h3 { margin: 6px 0 4px; font-size: 16px; font-weight: 900; }
+  .phase p { margin: 0; font-size: 13.5px; color: var(--muted); }
+  .p0-line {
+    margin: 9px 0 0 !important; font-family: var(--mono); font-size: 12px !important;
+    color: var(--accent-ink) !important; font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 640px) { .phases { grid-template-columns: 1fr; } }
+
+  /* Deliverables */
+  ol.deliv { list-style: none; counter-reset: d; margin: 0; padding: 0; display: grid; gap: 8px; }
+  ol.deliv li {
+    counter-increment: d; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 13px 56px 13px 52px; position: relative; font-size: 14.5px;
+  }
+  ol.deliv li::before {
+    content: counter(d); position: absolute; left: 16px; top: 13px;
+    width: 24px; height: 24px; border-radius: 7px; background: var(--accent-soft);
+    color: var(--accent-ink); font-weight: 900; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.deliv li.shipped::before { content: "✓"; }
+  ol.deliv li.shipped { border-color: var(--accent); }
+  ol.deliv b { font-weight: 900; }
+  ol.deliv .d-sub { color: var(--muted); }
+  .d-check {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; justify-content: center; padding: 6px; cursor: pointer;
+  }
+  .d-check input { width: 19px; height: 19px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+  .upd { font-size: 12px; color: var(--faint); }
+  p.upd { margin: 8px 2px 0; }
+
+  /* Stream board */
+  .board { display: grid; gap: 8px; }
+  .stream {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; display: grid; gap: 10px;
+    grid-template-columns: 40px minmax(200px, 1.2fr) minmax(180px, 1fr);
+    align-items: center;
+  }
+  .s-chip {
+    width: 34px; height: 34px; border-radius: 9px; background: var(--chip-bg);
+    font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  }
+  .stream.seq .s-chip { background: var(--accent-soft); color: var(--accent-ink); }
+  .s-name b { font-weight: 900; font-size: 15.5px; display: block; }
+  .s-name span { font-size: 13px; color: var(--muted); }
+  .s-name .owner {
+    font-family: var(--mono); font-weight: 400; font-size: 11px;
+    letter-spacing: .04em; color: var(--muted); background: var(--chip-bg);
+    border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: 2px;
+  }
+  .s-bar { position: relative; }
+  .track { background: var(--bar-track); border-radius: 5px; height: 10px; overflow: hidden; }
+  .fill { background: var(--bar); height: 100%; border-radius: 5px 4px 4px 5px; width: 0%; transition: width .25s ease; }
+  .s-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .s-val {
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .nowline { display: flex; align-items: baseline; gap: 8px; margin-top: 7px; }
+  .now-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent-ink);
+  }
+  .now-task {
+    flex: 1; min-width: 120px; background: transparent; border: 0;
+    border-bottom: 1px dashed var(--line); border-radius: 0;
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+    padding: 2px 2px 3px;
+  }
+  .now-task::placeholder { color: var(--faint); }
+  .now-task:focus { outline: none; border-bottom: 1px solid var(--accent); }
+  .now-task:disabled { border-bottom-color: transparent; color: var(--muted); }
+  .now-by { font-size: 12px; color: var(--faint); white-space: nowrap; }
+  .nowline.p0 { margin: 10px 2px 0; }
+  .stepper { display: inline-flex; gap: 4px; }
+  .stepper button {
+    width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font: 700 15px/1 var(--sans);
+    cursor: pointer; padding: 0;
+  }
+  .stepper button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-ink); }
+  .stepper button:focus-visible, .seq-chain .step:focus-visible, .d-check input:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  body.readonly .stepper, body.readonly .d-check { display: none; }
+  body.readonly ol.deliv li { padding-right: 16px; }
+  body.readonly .seq-chain .step { pointer-events: none; }
+  .s-bar .tip {
+    position: absolute; bottom: calc(100% + 6px); left: 0;
+    background: var(--ink); color: var(--bg); font-size: 12px; font-family: var(--mono);
+    padding: 5px 9px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .12s;
+  }
+  .stream:hover .tip, .stream:focus-within .tip { opacity: 1; }
+  .seq-chain {
+    grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+    border-top: 1px dashed var(--line); padding-top: 11px; margin-top: 2px;
+  }
+  .seq-chain .step {
+    font-family: var(--mono); font-size: 12px; background: var(--chip-bg);
+    border: 1px solid transparent; color: var(--ink);
+    border-radius: 6px; padding: 3px 8px; cursor: pointer;
+  }
+  .seq-chain .step.active { border-color: var(--accent); color: var(--accent-ink); background: var(--surface); }
+  .seq-chain .step.done { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-soft); }
+  .seq-chain .step.done::before { content: "✓ "; }
+  .seq-chain .arr { color: var(--faint); font-size: 12px; }
+  .seq-note { font-size: 12.5px; color: var(--muted); grid-column: 1 / -1; margin: 0; }
+  @media (max-width: 640px) {
+    .stream { grid-template-columns: 40px 1fr; }
+    .s-bar { grid-column: 1 / -1; }
+  }
+
+  /* Blocked flag */
+  .flag {
+    height: 26px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--muted);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+    cursor: pointer; padding: 0 8px;
+  }
+  .flag:hover { border-color: var(--warn-edge); color: var(--warn-edge); }
+  .flag.on { background: var(--warn-bg); border-color: var(--warn-edge); color: var(--warn-edge); }
+  .flag:focus-visible { outline: 2px solid var(--warn-edge); outline-offset: 2px; }
+  .stream.blocked { border-left: 3px solid var(--warn-edge); }
+  .now-label.blk { color: var(--warn-edge); }
+  body.readonly .flag { pointer-events: none; }
+
+  /* AI ETA */
+  .eta-chip {
+    font-family: var(--mono); font-size: 11px; background: var(--accent-soft);
+    color: var(--accent-ink); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
+  }
+  .eta-btn {
+    border: 1px solid var(--accent); background: var(--surface); color: var(--accent-ink);
+    font: 700 13px var(--sans); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  .eta-btn:hover:not(:disabled) { background: var(--accent-soft); }
+  .eta-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .eta-btn:disabled { opacity: .5; cursor: default; }
+  .log-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 14px; }
+
+  /* Mission log */
+  ol.feed {
+    list-style: none; margin: 0; padding: 0; display: grid;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden;
+  }
+  ol.feed li {
+    display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+    padding: 9px 16px; font-size: 13px; border-top: 1px solid var(--line);
+  }
+  ol.feed li:first-child { border-top: 0; }
+  .f-when { font-family: var(--mono); font-size: 11.5px; color: var(--faint); flex: 0 0 96px; }
+  .f-who { font-weight: 700; flex: 0 0 auto; }
+  .f-msg { color: var(--muted); }
+
+  /* Pipeline */
+  .pipe { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .pipe .agent {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; flex: 1 1 150px; min-width: 150px;
+  }
+  .pipe .agent b { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--accent-ink); display: block; }
+  .pipe .agent em { font-style: normal; font-weight: 900; font-size: 14px; display: block; margin: 2px 0; }
+  .pipe .agent span { font-size: 12.5px; color: var(--muted); display: block; }
+  .pipe .arrow { align-self: center; color: var(--faint); flex: 0 0 auto; }
+
+  /* Rules */
+  .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rule { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 13px 16px; font-size: 14px; }
+  .rule b { font-weight: 900; display: block; margin-bottom: 2px; }
+  .rule span { color: var(--muted); }
+  @media (max-width: 640px) { .rules { grid-template-columns: 1fr; } }
+
+  /* Risks */
+  .risks { margin: 0; display: grid; gap: 8px; }
+  .risk {
+    background: var(--warn-bg); border-left: 3px solid var(--warn-edge);
+    border-radius: 0 10px 10px 0; padding: 11px 16px; font-size: 14px;
+  }
+  .risk b { font-weight: 900; }
+  .risk span { color: var(--muted); }
+
+  code, .mono { font-family: var(--mono); font-size: .92em; }
+  code {
+    background: var(--chip-bg); border-radius: 5px; padding: 1px 5px;
+    overflow-wrap: anywhere;
+  }
+
+  footer {
+    margin-top: 52px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted); display: grid; gap: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) { .s-bar .tip, .fill { transition: none; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow"><a href="https://claude.ai/artifact/GPinWsaME25pYd8DwCWUQV">⌂ Mission Control</a> · VELU · iOS · Approved 2026-09-24</p>
+    <h1>UIKit → SwiftUI Migration Roadmap</h1>
+    <p class="lede">How we convert the whole app to SwiftUI with proper MVVM — split into
+      six workstreams that humans and Claude sessions run in parallel without stepping on
+      each other. Conflict avoidance is structural: disjoint directory ownership, one
+      router seam, and a project file nobody's PR ever touches.</p>
+    <div class="stats">
+      <div class="stat"><b id="stat-done">0 / 556</b><span>stream screens converted · <span id="stat-pct">0%</span></span></div>
+      <div class="stat"><b>29</b><span>feature areas, all assigned</span></div>
+      <div class="stat"><b>1,395</b><span>XIBs to retire</span></div>
+      <div class="stat"><b>10</b><span>SwiftUI views today</span></div>
+    </div>
+    <div class="who-line"><span class="now-label">signed as</span><input class="now-task" id="who" type="text" maxlength="24" placeholder="your name — updates get credited to it" aria-label="Name shown on your updates"></div>
+    <p class="live-note" id="live-note" hidden></p>
+  </header>
+
+  <h2>Three phases</h2>
+  <p class="sub">Phase 0 merges to main before any stream branches off. Nothing in Phase 1 waits on anything except Phase 0.</p>
+  <div class="phases">
+    <div class="phase now">
+      <span class="tag">Phase 0 · next up</span>
+      <h3>Foundation</h3>
+      <p>One small stream lands the shared seams once, so feature streams never edit shared files again.</p>
+      <p class="p0-line" id="p0-count">0 / 5 deliverables shipped</p>
+    </div>
+    <div class="phase">
+      <span class="tag">Phase 1</span>
+      <h3>Six streams</h3>
+      <p>Five parallel streams plus one internally-sequenced social stream. Screen-sized PRs, merged continuously.</p>
+    </div>
+    <div class="phase">
+      <span class="tag">Phase 2</span>
+      <h3>The shell</h3>
+      <p>RootVC tab bar, Splash, Notification, Chat, AdsNew — plus CoreData consolidation and retiring the facade.</p>
+    </div>
+  </div>
+
+  <h2>Phase 0 — what the foundation ships</h2>
+  <p class="sub">Seams and scaffolding only; zero screen conversions. Tick a deliverable when it merges to main.</p>
+  <ol class="deliv">
+    <li data-p0item="router"><b>Router facade</b> — per-cluster protocols (<code>SocialRouting</code>, <code>CommerceRouting</code>, …) over <code>RootVC.shared</code>, the 414-reference god-router. View models inject the protocol; <code>RootVC.swift</code> is never edited by feature streams. <span class="d-sub">New files only, in <code>Classes/Navigation/</code>.</span><label class="d-check" aria-label="Mark router facade shipped"><input type="checkbox" id="p0-router"></label></li>
+    <li data-p0item="kit"><b>Migration kit</b> — the blessed template: <code>@MainActor @Observable</code> view model, nested <code>LoadState</code> (<code>loading / loaded / failed</code>), injected protocol dependencies with production defaults, <code>AccountManagerProtocol</code>, hosting helpers.<label class="d-check" aria-label="Mark migration kit shipped"><input type="checkbox" id="p0-kit"></label></li>
+    <li data-p0item="seams"><b>Social seams</b> — comments, the report flow, and clip options/share become reachable only via router methods, so social features stop instantiating each other's view controllers.<label class="d-check" aria-label="Mark social seams shipped"><input type="checkbox" id="p0-seams"></label></li>
+    <li data-p0item="tests"><b>VeluTests verified</b> — the existing Swift Testing target (already wired into every scheme) is where each converted screen's view-model tests land, starting day one.<label class="d-check" aria-label="Mark VeluTests verification shipped"><input type="checkbox" id="p0-tests"></label></li>
+    <li data-p0item="folders"><b>Buildable folders</b> — synchronized folders end per-file pbxproj registration. Heads-up: the first conversion bumps the project format (60 → 77) for everyone; Xcode 16+ required, one-way.<label class="d-check" aria-label="Mark buildable folders shipped"><input type="checkbox" id="p0-folders"></label></li>
+  </ol>
+  <div class="nowline p0"><span class="now-label">now</span><input class="now-task" id="task-phase0" type="text" maxlength="140" placeholder="nothing in flight — type the deliverable being built" aria-label="Current Phase 0 task"><span class="now-by" id="taskby-phase0"></span></div>
+  <p class="upd" id="upd-phase0"></p>
+
+  <h2>Phase 1 — the six streams</h2>
+  <p class="sub">Each stream exclusively owns its <code>Controllers/&lt;Area&gt;</code> + <code>ViewModels/&lt;Area&gt;</code> directories. Bars show <b>screens converted</b> — nudge − / + as PRs merge. Flag a stream ⚑ when it's stuck. Hover a row for stream size.</p>
+  <div class="board">
+    <div class="stream" id="row-s1">
+      <div class="s-chip">S1</div>
+      <div class="s-name"><b>Food<span class="owner">KC</span></b><span>Starts first — extracts the shared Food components S2/S3 borrow. Owns the SwiftUI reference code.</span></div>
+      <div class="s-bar"><span class="tip">186 files · 21,507 LOC</span><div class="track"><div class="fill" id="fill-s1"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s1">0 / 44 screens · 0%</span><span class="stepper" role="group" aria-label="Food screens converted"><button type="button" data-stream="s1" data-delta="-1" aria-label="One fewer Food screen">−</button><button type="button" data-stream="s1" data-delta="1" aria-label="One more Food screen">+</button></span><button type="button" class="flag" data-flag="s1" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s1" hidden></span><span class="upd" id="upd-s1"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s1" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in Food"><span class="now-by" id="taskby-s1"></span></div>
+        <div class="nowline" id="blkrow-s1" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s1" type="text" maxlength="140" placeholder="why? — e.g. waiting on Phase 0" aria-label="Why Food is blocked"></div>
+      </div>
+    </div>
+    <div class="stream" id="row-s2">
+      <div class="s-chip">S2</div>
+      <div class="s-name"><b>Travel<span class="owner">Hanz</span></b><span>Largest isolated area (91 screens). Sub-sequences internally; can slip without blocking anyone.</span></div>
+      <div class="s-bar"><span class="tip">259 files · 48,468 LOC</span><div class="track"><div class="fill" id="fill-s2"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s2">0 / 91 screens · 0%</span><span class="stepper" role="group" aria-label="Travel screens converted"><button type="button" data-stream="s2" data-delta="-1" aria-label="One fewer Travel screen">−</button><button type="button" data-stream="s2" data-delta="1" aria-label="One more Travel screen">+</button></span><button type="button" class="flag" data-flag="s2" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s2" hidden></span><span class="upd" id="upd-s2"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s2" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in Travel"><span class="now-by" id="taskby-s2"></span></div>
+        <div class="nowline" id="blkrow-s2" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s2" type="text" maxlength="140" placeholder="why? — e.g. waiting on S1 Food components" aria-label="Why Travel is blocked"></div>
+      </div>
+    </div>
+    <div class="stream" id="row-s3">
+      <div class="s-chip">S3</div>
+      <div class="s-name"><b>Mall + Wallet + Rates + Wishlist<span class="owner">KC</span></b><span>Grouped so their cross-references stay inside one stream.</span></div>
+      <div class="s-bar"><span class="tip">273 files · 35,464 LOC</span><div class="track"><div class="fill" id="fill-s3"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s3">0 / 108 screens · 0%</span><span class="stepper" role="group" aria-label="Mall, Wallet, Rates and Wishlist screens converted"><button type="button" data-stream="s3" data-delta="-1" aria-label="One fewer commerce screen">−</button><button type="button" data-stream="s3" data-delta="1" aria-label="One more commerce screen">+</button></span><button type="button" class="flag" data-flag="s3" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s3" hidden></span><span class="upd" id="upd-s3"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s3" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in the Mall cluster"><span class="now-by" id="taskby-s3"></span></div>
+        <div class="nowline" id="blkrow-s3" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s3" type="text" maxlength="140" placeholder="why? — e.g. waiting on S1 Food components" aria-label="Why the Mall cluster is blocked"></div>
+      </div>
+    </div>
+    <div class="stream" id="row-s4">
+      <div class="s-chip">S4</div>
+      <div class="s-name"><b>Vault + Drive + Music<span class="owner">Jude</span></b><span>Create-Post and Profile hooks go through the router facade — never converted here.</span></div>
+      <div class="s-bar"><span class="tip">136 files · 25,159 LOC</span><div class="track"><div class="fill" id="fill-s4"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s4">0 / 61 screens · 0%</span><span class="stepper" role="group" aria-label="Vault, Drive and Music screens converted"><button type="button" data-stream="s4" data-delta="-1" aria-label="One fewer media screen">−</button><button type="button" data-stream="s4" data-delta="1" aria-label="One more media screen">+</button></span><button type="button" class="flag" data-flag="s4" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s4" hidden></span><span class="upd" id="upd-s4"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s4" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in Vault, Drive and Music"><span class="now-by" id="taskby-s4"></span></div>
+        <div class="nowline" id="blkrow-s4" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s4" type="text" maxlength="140" placeholder="why?" aria-label="Why Vault, Drive and Music is blocked"></div>
+      </div>
+    </div>
+    <div class="stream" id="row-s5">
+      <div class="s-chip">S5</div>
+      <div class="s-name"><b>Explore + Ads + Ranking + Discover + Meet + Onboarding<span class="owner">Jade</span></b><span>Simple screens, few existing view models — the ramp-up stream for the template.</span></div>
+      <div class="s-bar"><span class="tip">270 files · 35,153 LOC</span><div class="track"><div class="fill" id="fill-s5"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s5">0 / 106 screens · 0%</span><span class="stepper" role="group" aria-label="Explore cluster screens converted"><button type="button" data-stream="s5" data-delta="-1" aria-label="One fewer Explore-cluster screen">−</button><button type="button" data-stream="s5" data-delta="1" aria-label="One more Explore-cluster screen">+</button></span><button type="button" class="flag" data-flag="s5" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s5" hidden></span><span class="upd" id="upd-s5"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s5" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in the Explore cluster"><span class="now-by" id="taskby-s5"></span></div>
+        <div class="nowline" id="blkrow-s5" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s5" type="text" maxlength="140" placeholder="why?" aria-label="Why the Explore cluster is blocked"></div>
+      </div>
+    </div>
+    <div class="stream seq" id="row-s6">
+      <div class="s-chip">S6</div>
+      <div class="s-name"><b>Social — one stream, strict order<span class="owner">Jade</span></b><span>These features share concrete view controllers, so they cannot run in parallel. Longest pole; starts immediately.</span></div>
+      <div class="s-bar"><span class="tip">~360 files · ~88,000 LOC</span><div class="track"><div class="fill" id="fill-s6"></div></div>
+        <div class="s-meta"><span class="s-val" id="val-s6">0 / 146 screens · 0%</span><span class="stepper" role="group" aria-label="Social screens converted"><button type="button" data-stream="s6" data-delta="-1" aria-label="One fewer Social screen">−</button><button type="button" data-stream="s6" data-delta="1" aria-label="One more Social screen">+</button></span><button type="button" class="flag" data-flag="s6" aria-pressed="false">⚑</button><span class="eta-chip" id="eta-s6" hidden></span><span class="upd" id="upd-s6"></span></div>
+        <div class="nowline"><span class="now-label">now</span><input class="now-task" id="task-s6" type="text" maxlength="140" placeholder="nothing in flight — type the current screen / PR" aria-label="Current task in Social"><span class="now-by" id="taskby-s6"></span></div>
+        <div class="nowline" id="blkrow-s6" hidden><span class="now-label blk">blocked</span><input class="now-task" id="blk-s6" type="text" maxlength="140" placeholder="why? — e.g. waiting on Phase 0 seams" aria-label="Why Social is blocked"></div>
+      </div>
+      <div class="seq-chain">
+        <button type="button" class="step" data-step="comment">Comment · 3</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="moment">Moment · 15</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="clip">Clip · 9</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="post">Post · 21</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="home">Home · 2</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="live">Live · 14</button><span class="arr">→</span>
+        <button type="button" class="step" data-step="profile">Profile · 82</button>
+      </div>
+      <p class="seq-note">Profile goes last on purpose: 82 screens and ~90 outgoing dependencies that melt away as earlier steps land. Banuba, Agora, and the AVPlayer feed stay UIKit, wrapped — screens migrate, media engines don't. Tap a step to mark it: outlined = in progress, checked = done.</p>
+    </div>
+  </div>
+
+  <h2>Mission log</h2>
+  <p class="sub">The last ten moves on the board, newest first. ETAs are Claude's own read of the live counts, history, blockers and sequencing — not straight-line math. Re-ask after a good week.</p>
+  <div class="log-head">
+    <button type="button" class="eta-btn" id="eta-btn" hidden title="Runs one Claude call from your browser on your account; the estimate is saved for everyone.">✦ Ask Claude for fresh ETAs</button>
+    <span class="eta-chip" id="eta-overall" hidden></span>
+    <span class="upd" id="eta-meta"></span>
+  </div>
+  <ol class="feed" id="feed" hidden></ol>
+  <p class="upd" id="feed-empty">Nothing logged yet — the log writes itself as the team moves counters, steps and flags.</p>
+
+  <h2>Every screen, one pipeline</h2>
+  <p class="sub">The unit of work is a single screen ≈ a single PR. Avengers, assemble — in this order, every time.</p>
+  <div class="pipe">
+    <div class="agent"><b>black-widow</b><em>Map</em><span>Recon first: entry points, endpoints, models — every claim cited.</span></div>
+    <span class="arrow">→</span>
+    <div class="agent"><b>hawkeye</b><em>Red tests</em><span>Failing view-model tests before any implementation.</span></div>
+    <span class="arrow">→</span>
+    <div class="agent"><b>iron-man</b><em>Build</em><span>SwiftUI view + view model from the kit. Old VC and XIB deleted in the same PR.</span></div>
+    <span class="arrow">→</span>
+    <div class="agent"><b>captain-america</b><em>Review</em><span>Audits against the skills rulebooks. Blocking findings stop the line.</span></div>
+    <span class="arrow">→</span>
+    <div class="agent"><b>thor</b><em>Commit</em><span>Conventional Commits, staged by explicit path.</span></div>
+  </div>
+
+  <h2>What keeps merges clean</h2>
+  <div class="rules">
+    <div class="rule"><b>Exclusive directory ownership</b><span>You edit your stream's directories and nothing else. Cross-boundary needs go through the router facade or the owning stream.</span></div>
+    <div class="rule"><b>Shared code is frozen after Phase 0</b><span>One carve-out: extracted components land as new files in <code>Shared/Components/</code>, coordinated with the foundation owner.</span></div>
+    <div class="rule"><b>Nobody's PR touches the project file</b><span>A developer synchronizes each stream's folder in Xcode at kickoff; after that, adds and deletes are pbxproj-free.</span></div>
+    <div class="rule"><b>Small PRs, merged continuously</b><span>One screen per PR, daily rebase, no month-long mega-branches. Giant social VCs split in two: view model first, view second.</span></div>
+  </div>
+
+  <h2>Risks we're carrying</h2>
+  <div class="risks">
+    <div class="risk"><b>No CI.</b> <span>Nothing catches a broken build before merge. Optional Phase 0 add-on: a minimal build-check workflow; weekly all-scheme build until then.</span></div>
+    <div class="risk"><b>The format bump is one-way.</b> <span>Buildable folders upgrade the whole project format on first use. Everyone on Xcode 16+ before it happens.</span></div>
+    <div class="risk"><b>Giant social VCs hide untested behavior.</b> <span>2–3K-line controllers get a black-widow map before conversion and a manual DEV pass after.</span></div>
+    <div class="risk"><b>CoreData stays messy for now.</b> <span>View models depend on repository protocols, not CoreData. Consolidation is Phase 2, deliberately.</span></div>
+  </div>
+
+  <footer>
+    <span>Progress on this page is the canonical migration status — counts and checkmarks are live, shared, and updated by the team as PRs merge. Design truth stays in the spec.</span>
+    <span>Board data lives in the team's own Supabase project, so anyone with this link can update it — sign your updates with the name field up top.</span>
+    <span>Full spec: <code>docs/superpowers/specs/2026-09-24-uikit-swiftui-migration-design.md</code></span>
+    <span>562 screen-level VCs = 556 across S1–S6 + 6 in the Phase 2 shell (Root, Notification, Chat, AdsNew). Screen totals count non-cell <code>*VC.swift</code> files per stream's directories, measured 2026-09-24.</span>
+    <span>Part of <a href="https://claude.ai/artifact/GPinWsaME25pYd8DwCWUQV">VELU Mission Control</a>, the index of all initiatives.</span>
+    <span>Branch <code>feature/uikit-swiftui-migration-plan</code> · commit <code>28337ced5</code></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const SUPA_URL = "https://cvxgaswasthqwfgdxzua.supabase.co";
+  const SUPA_KEY = "sb_publishable_lp5WZU9WEc0wziEUX6CUNw_HvrDqTU1";
+  const configured = SUPA_URL.indexOf("https://") === 0;
+
+  const TOTALS = { s1: 44, s2: 91, s3: 108, s4: 61, s5: 106, s6: 146 };
+  const OVERALL = 556;
+  const STREAMS = Object.keys(TOTALS);
+  const S6_STEPS = ["comment", "moment", "clip", "post", "home", "live", "profile"];
+  const P0 = ["router", "kit", "seams", "tests", "folders"];
+  const ALL_DOCS = ["phase0"].concat(STREAMS);
+  const EXTRA = ["feed", "history", "eta"];
+  const LABELS = { s1: "S1 Food", s2: "S2 Travel", s3: "S3 Mall+", s4: "S4 Vault+", s5: "S5 Explore+", s6: "S6 Social", phase0: "Phase 0" };
+  const OWNERS = { s1: "KC", s2: "Hanz", s3: "KC", s4: "Jude", s5: "Jade", s6: "Jade" };
+  const P0_LABELS = { router: "Router facade", kit: "Migration kit", seams: "Social seams", tests: "VeluTests", folders: "Buildable folders" };
+  const STEP_WORDS = { todo: "back to todo", active: "in progress", done: "done ✓" };
+
+  function blank(id) {
+    if (id === "phase0") {
+      const items = {};
+      P0.forEach(k => { items[k] = false; });
+      return { items: items, by: null, at: null, task: "", taskBy: null, taskAt: null };
+    }
+    const d = { done: 0, by: null, at: null, task: "", taskBy: null, taskAt: null, blocked: false, blockedWhy: "" };
+    if (id === "s6") {
+      const steps = {};
+      S6_STEPS.forEach(k => { steps[k] = "todo"; });
+      d.steps = steps;
+    }
+    return d;
+  }
+
+  const state = {};
+  ALL_DOCS.forEach(id => { state[id] = blank(id); });
+  state.feed = { events: [] };
+  state.history = { days: {} };
+  state.eta = { streams: {}, overall: null, by: null, at: null };
+
+  let sampleNS = null, historyDone = false, loaded = false;
+  const dirty = new Set(), timers = new Map(), chains = new Map();
+  const $ = id => document.getElementById(id);
+
+  // Identity: a typed name, remembered per browser. Legacy rows may carry
+  // opaque platform ids (u_…) from the old storage — those render as no name.
+  const whoInp = $("who");
+  try { whoInp.value = localStorage.getItem("velu-board-name") || ""; } catch (e) {}
+  whoInp.addEventListener("keydown", e => { if (e.key === "Enter") whoInp.blur(); });
+  whoInp.addEventListener("change", () => {
+    const v = whoInp.value.trim().slice(0, 24);
+    whoInp.value = v;
+    try { localStorage.setItem("velu-board-name", v); } catch (e) {}
+  });
+  const me = () => (whoInp.value.trim() || "someone").slice(0, 24);
+
+  function fmtPct(done, total) {
+    const p = done / total * 100;
+    if (done > 0 && p < 1) return "<1%";
+    return Math.round(p) + "%";
+  }
+
+  function fmtWhen(at) {
+    const d = new Date(at), now = new Date();
+    if (d.toDateString() === now.toDateString()) return "today";
+    if (d.toDateString() === new Date(now.getTime() - 86400000).toDateString()) return "yesterday";
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  }
+
+  function isUid(v) {
+    return typeof v === "string" && /^u_[A-Za-z0-9_-]{22}$/.test(v);
+  }
+
+  function whoText(v) {
+    if (!v || isUid(v)) return "";
+    return String(v).slice(0, 40);
+  }
+
+  function fmtWhenTime(t) {
+    const hm = new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    return fmtWhen(t) + " " + hm;
+  }
+
+  function velocity(id, done) {
+    const days = (state.history && state.history.days) || {};
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const keys = Object.keys(days).filter(k => k < todayKey).sort();
+    if (!keys.length) return null;
+    const cutoff = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+    const baseKey = keys.find(k => k >= cutoff) || keys[keys.length - 1];
+    const span = (Date.parse(todayKey) - Date.parse(baseKey)) / 86400000;
+    if (!(span >= 5)) return null;
+    const then = (days[baseKey] && days[baseKey][id]) | 0;
+    const vel = (done - then) / span * 7;
+    return vel > 0 ? vel.toFixed(1).replace(/\.0$/, "") : null;
+  }
+
+  function renderFeed() {
+    const list = $("feed");
+    const evs = ((state.feed && state.feed.events) || []).slice().reverse();
+    list.hidden = evs.length === 0;
+    $("feed-empty").hidden = evs.length > 0;
+    list.textContent = "";
+    for (const ev of evs) {
+      const li = document.createElement("li");
+      const when = document.createElement("span");
+      when.className = "f-when";
+      when.textContent = ev.t ? fmtWhenTime(ev.t) : "";
+      const who = document.createElement("span");
+      who.className = "f-who";
+      who.textContent = ev.by ? (whoText(ev.by) || "someone") : "agent";
+      const msg = document.createElement("span");
+      msg.className = "f-msg";
+      msg.textContent = String(ev.msg || "").slice(0, 120);
+      li.append(when, who, msg);
+      list.append(li);
+    }
+  }
+
+  function renderNow(id) {
+    const inp = $("task-" + id);
+    if (!inp) return;
+    const d = state[id];
+    if (document.activeElement !== inp) inp.value = d.task || "";
+    inp.disabled = !configured;
+    const tb = $("taskby-" + id);
+    tb.textContent = d.task ? whoText(d.taskBy) : "";
+  }
+
+  function render() {
+    let sum = 0;
+    for (const id of STREAMS) {
+      const total = TOTALS[id];
+      const done = Math.max(0, Math.min(total, state[id].done | 0));
+      sum += done;
+      $("fill-" + id).style.width = (done / total * 100) + "%";
+      const vel = velocity(id, done);
+      $("val-" + id).textContent = done + " / " + total + " screens · " + fmtPct(done, total) + (vel ? " · ~" + vel + "/wk" : "");
+      const by = whoText(state[id].by);
+      $("upd-" + id).textContent = state[id].at
+        ? "updated " + fmtWhen(state[id].at) + (by ? " · " + by : "")
+        : "";
+      const blocked = !!state[id].blocked;
+      $("row-" + id).classList.toggle("blocked", blocked);
+      const flag = document.querySelector('.flag[data-flag="' + id + '"]');
+      flag.textContent = blocked ? "⚑ blocked" : "⚑";
+      flag.classList.toggle("on", blocked);
+      flag.setAttribute("aria-pressed", blocked ? "true" : "false");
+      flag.title = blocked ? "Click to unblock" : "Mark this stream blocked";
+      $("blkrow-" + id).hidden = !blocked;
+      const blkInp = $("blk-" + id);
+      if (document.activeElement !== blkInp) blkInp.value = state[id].blockedWhy || "";
+      blkInp.disabled = !configured;
+      const etaEl = $("eta-" + id);
+      const se = state.eta && state.eta.streams && state.eta.streams[id];
+      if (se && se.eta && se.eta !== "—") {
+        etaEl.hidden = false;
+        etaEl.textContent = "✦ AI ETA " + se.eta;
+        etaEl.title = se.note || "";
+      } else {
+        etaEl.hidden = true;
+      }
+      const minus = document.querySelector('[data-stream="' + id + '"][data-delta="-1"]');
+      const plus = document.querySelector('[data-stream="' + id + '"][data-delta="1"]');
+      if (minus) minus.disabled = done <= 0;
+      if (plus) plus.disabled = done >= total;
+    }
+    $("stat-done").textContent = sum + " / " + OVERALL;
+    $("stat-pct").textContent = fmtPct(sum, OVERALL);
+
+    const steps = state.s6.steps || {};
+    document.querySelectorAll(".seq-chain .step").forEach(b => {
+      const s = steps[b.dataset.step] || "todo";
+      b.classList.toggle("active", s === "active");
+      b.classList.toggle("done", s === "done");
+      b.setAttribute("aria-pressed", s === "done" ? "true" : "false");
+    });
+
+    const items = state.phase0.items || {};
+    let shipped = 0;
+    P0.forEach(k => {
+      const c = $("p0-" + k);
+      if (c) c.checked = !!items[k];
+      if (items[k]) shipped++;
+    });
+    $("p0-count").textContent = shipped + " / 5 deliverables shipped";
+    document.querySelectorAll("ol.deliv li").forEach(li => {
+      const k = li.dataset.p0item;
+      if (k) li.classList.toggle("shipped", !!items[k]);
+    });
+    const p0by = whoText(state.phase0.by);
+    $("upd-phase0").textContent = state.phase0.at
+      ? "updated " + fmtWhen(state.phase0.at) + (p0by ? " · " + p0by : "")
+      : "";
+
+    ALL_DOCS.forEach(renderNow);
+    renderFeed();
+    const ov = state.eta && state.eta.overall;
+    const ovEl = $("eta-overall");
+    if (ov && ov.eta && ov.eta !== "—") {
+      ovEl.hidden = false;
+      ovEl.textContent = "✦ AI ETA overall " + ov.eta;
+      ovEl.title = ov.note || "";
+    } else {
+      ovEl.hidden = true;
+    }
+    const em = $("eta-meta");
+    if (state.eta && state.eta.at) {
+      const eby = whoText(state.eta.by);
+      em.textContent = "asked " + fmtWhen(state.eta.at) + (eby ? " · " + eby : "");
+    } else {
+      em.textContent = "";
+    }
+  }
+
+  function note(msg) {
+    const el = $("live-note");
+    if (msg) { el.textContent = msg; el.hidden = false; } else { el.hidden = true; }
+  }
+
+  function logEvent(msg, key) {
+    const evs = ((state.feed && state.feed.events) || []).slice();
+    const last = evs[evs.length - 1];
+    const now = Date.now();
+    const ev = { t: now, by: me(), key: key, msg: String(msg).slice(0, 120) };
+    if (last && last.key === key && last.by === ev.by && now - last.t < 120000) {
+      evs[evs.length - 1] = ev;
+    } else {
+      evs.push(ev);
+    }
+    state.feed = { events: evs.slice(-10) };
+    dirty.add("feed");
+    clearTimeout(timers.get("feed"));
+    timers.set("feed", setTimeout(() => flush("feed"), 600));
+  }
+
+  const HDRS = {
+    apikey: SUPA_KEY,
+    Authorization: "Bearer " + SUPA_KEY,
+    "Content-Type": "application/json",
+  };
+
+  function flush(id) {
+    timers.delete(id);
+    if (!configured) { dirty.delete(id); return; }
+    const body = state[id];
+    const prev = chains.get(id) || Promise.resolve();
+    const p = prev
+      .then(() => fetch(SUPA_URL + "/rest/v1/progress?on_conflict=id", {
+        method: "POST",
+        headers: Object.assign({ Prefer: "resolution=merge-duplicates,return=minimal" }, HDRS),
+        body: JSON.stringify([{ id: id, body: body, updated_at: new Date().toISOString() }]),
+      }))
+      .then(r => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        if (state[id] === body && !timers.has(id)) dirty.delete(id);
+      })
+      .catch(() => note("Couldn't save the last update — check your connection, then try again."));
+    chains.set(id, p);
+  }
+
+  function mutate(id, fn, evFn) {
+    if (!configured) return;
+    const next = JSON.parse(JSON.stringify(state[id]));
+    fn(next);
+    next.by = me();
+    next.at = Date.now();
+    state[id] = next;
+    dirty.add(id);
+    if (evFn) {
+      const ev = evFn(next);
+      if (ev) logEvent(ev[1], ev[0]);
+    }
+    render();
+    clearTimeout(timers.get(id));
+    timers.set(id, setTimeout(() => flush(id), 450));
+  }
+
+  document.querySelectorAll(".stepper button").forEach(b => {
+    b.addEventListener("click", () => {
+      const id = b.dataset.stream, delta = Number(b.dataset.delta);
+      mutate(id, d => { d.done = Math.max(0, Math.min(TOTALS[id], (d.done | 0) + delta)); },
+        d => [id + ":done", LABELS[id] + " · " + d.done + " / " + TOTALS[id] + " screens"]);
+    });
+  });
+  document.querySelectorAll(".seq-chain .step").forEach(b => {
+    b.addEventListener("click", () => {
+      const key = b.dataset.step;
+      mutate("s6", d => {
+        if (!d.steps) d.steps = {};
+        const cur = d.steps[key] || "todo";
+        d.steps[key] = cur === "todo" ? "active" : cur === "active" ? "done" : "todo";
+      }, d => ["s6:step:" + key,
+        "S6 Social · " + key.charAt(0).toUpperCase() + key.slice(1) + ": " + STEP_WORDS[d.steps[key]]]);
+    });
+  });
+  ALL_DOCS.forEach(id => {
+    const inp = $("task-" + id);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+    inp.addEventListener("change", () => {
+      if (!configured) { render(); return; }
+      const v = inp.value.trim().slice(0, 140);
+      if (v === (state[id].task || "")) return;
+      mutate(id, d => { d.task = v; d.taskBy = me(); d.taskAt = Date.now(); },
+        d => [id + ":task", LABELS[id] + " · now: " + (d.task || "cleared")]);
+    });
+  });
+  document.querySelectorAll(".flag").forEach(b => {
+    b.addEventListener("click", () => {
+      const id = b.dataset.flag;
+      mutate(id, d => { d.blocked = !d.blocked; if (!d.blocked) d.blockedWhy = ""; },
+        d => [id + ":blocked", LABELS[id] + (d.blocked ? " · ⚑ blocked" : " · unblocked")]);
+      if (state[id] && state[id].blocked) {
+        const i = $("blk-" + id);
+        if (i && !i.disabled) setTimeout(() => i.focus(), 0);
+      }
+    });
+  });
+  STREAMS.forEach(id => {
+    const inp = $("blk-" + id);
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+    inp.addEventListener("change", () => {
+      if (!configured) { render(); return; }
+      const v = inp.value.trim().slice(0, 140);
+      if (v === (state[id].blockedWhy || "")) return;
+      mutate(id, d => { d.blockedWhy = v; },
+        d => [id + ":blocked", LABELS[id] + " · ⚑ blocked: " + (v || "(no reason)")]);
+    });
+  });
+
+  async function askEtas() {
+    const btn = $("eta-btn");
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = "✦ Claude is estimating…";
+    try {
+      const payload = {
+        today: new Date().toISOString().slice(0, 10),
+        phase0: {
+          deliverablesShipped: P0.filter(k => state.phase0.items && state.phase0.items[k]).length,
+          of: 5,
+          gate: "All Phase 1 streams start only after Phase 0 merges.",
+        },
+        streams: STREAMS.map(id => ({
+          id: id, name: LABELS[id], assignee: OWNERS[id],
+          screensTotal: TOTALS[id],
+          screensDone: Math.max(0, Math.min(TOTALS[id], state[id].done | 0)),
+          blocked: !!state[id].blocked,
+          blockedWhy: state[id].blockedWhy || "",
+          currentTask: state[id].task || "",
+        })),
+        dailyHistory: (state.history && state.history.days) || {},
+        constraints: [
+          "1 screen ≈ 1 PR through an agent pipeline; humans review and merge.",
+          "S6 is strictly sequential: Comment→Moment→Clip→Post→Home→Live→Profile.",
+          "S2 and S3 cannot convert Food-dependent screens until S1 extracts shared components.",
+          "KC runs S1+S3 and Jade runs S5+S6, so each pair shares one operator's throughput.",
+        ],
+      };
+      const res = await sampleNS.json(
+        "You estimate delivery dates for an iOS UIKit-to-SwiftUI migration tracked in the JSON below. " +
+        "Use dailyHistory (per-day screensDone snapshots per stream) for real throughput; weigh blockers, sequencing constraints and shared operators. " +
+        "Be honest: with little or no throughput history, give a wide range or \"—\" and say why in the note. Never invent precision.\n" +
+        "Reply with ONLY this JSON: {\"streams\":{\"s1\":{\"eta\":string,\"note\":string},\"s2\":{...},\"s3\":{...},\"s4\":{...},\"s5\":{...},\"s6\":{...}},\"overall\":{\"eta\":string,\"note\":string}}. " +
+        "eta: short and human, e.g. \"late Nov 2026\" or \"Dec 2026 – Feb 2027\" or \"—\"; note: one line, at most 90 characters.\n\n" +
+        JSON.stringify(payload),
+        { cache: false }
+      );
+      const clean = { streams: {}, overall: null, by: me(), at: Date.now() };
+      STREAMS.forEach(id => {
+        const s = res && res.streams && res.streams[id];
+        clean.streams[id] = {
+          eta: String((s && s.eta) || "—").slice(0, 40),
+          note: String((s && s.note) || "").slice(0, 120),
+        };
+      });
+      if (res && res.overall) {
+        clean.overall = {
+          eta: String(res.overall.eta || "—").slice(0, 40),
+          note: String(res.overall.note || "").slice(0, 120),
+        };
+      }
+      state.eta = clean;
+      dirty.add("eta");
+      logEvent("AI ETAs refreshed" + (clean.overall && clean.overall.eta !== "—" ? " · overall " + clean.overall.eta : ""), "eta");
+      render();
+      clearTimeout(timers.get("eta"));
+      timers.set("eta", setTimeout(() => flush("eta"), 100));
+    } catch (e) {
+      const gone = ["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"];
+      if (e && gone.indexOf(e.code) !== -1) {
+        btn.hidden = true;
+      } else if (e && e.code !== "cancelled") {
+        note(e && e.code === "rate_limited"
+          ? "Couldn't get an AI estimate — rate limited; try again in a few minutes."
+          : "Couldn't get an AI estimate — try again.");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  function maybeSnapshotHistory() {
+    if (historyDone || !configured || !loaded) return;
+    historyDone = true;
+    const today = new Date().toISOString().slice(0, 10);
+    const days = (state.history && state.history.days) || {};
+    if (days[today]) return;
+    const entry = {};
+    STREAMS.forEach(id => { entry[id] = Math.max(0, Math.min(TOTALS[id], state[id].done | 0)); });
+    const next = {};
+    Object.keys(days).sort().slice(-59).forEach(k => { next[k] = days[k]; });
+    next[today] = entry;
+    state.history = { days: next };
+    dirty.add("history");
+    flush("history");
+  }
+
+  P0.forEach(k => {
+    $("p0-" + k).addEventListener("change", () => {
+      if (!configured) { render(); return; }
+      const c = $("p0-" + k);
+      mutate("phase0", d => {
+        if (!d.items) d.items = {};
+        d.items[k] = c.checked;
+      }, d => {
+        const n = P0.filter(x => d.items[x]).length;
+        return ["phase0:" + k, "Phase 0 · " + P0_LABELS[k] + (d.items[k] ? " shipped ✓" : " unshipped") + " (" + n + "/5)"];
+      });
+    });
+  });
+
+  function applyRows(rows) {
+    for (const row of rows) {
+      if (!row || dirty.has(row.id)) continue;
+      if (EXTRA.indexOf(row.id) !== -1) { state[row.id] = row.body || {}; continue; }
+      if (ALL_DOCS.indexOf(row.id) === -1) continue;
+      state[row.id] = Object.assign(blank(row.id), row.body || {});
+    }
+  }
+
+  async function sync(firstLoad) {
+    try {
+      const r = await fetch(SUPA_URL + "/rest/v1/progress?select=id,body", { headers: HDRS });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      applyRows(await r.json());
+      loaded = true;
+      note("");
+      render();
+      maybeSnapshotHistory();
+    } catch (e) {
+      if (firstLoad || !loaded) {
+        note("Can't reach the progress database right now — showing the last data this page saw. It retries on its own.");
+      }
+    }
+  }
+
+  render();
+
+  if (!configured) {
+    document.body.classList.add("readonly");
+    note("Board storage isn't wired up yet — this publish is missing its database settings. Ping Jade.");
+  } else {
+    sync(true);
+    setInterval(() => { if (!document.hidden) sync(false); }, 20000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) sync(false); });
+  }
+
+  (async () => {
+    if (!configured || !window.claude || !window.claude.use) return;
+    sampleNS = await claude.use("sample");
+    if (sampleNS) {
+      const eb = $("eta-btn");
+      eb.hidden = false;
+      eb.addEventListener("click", askEtas);
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>
